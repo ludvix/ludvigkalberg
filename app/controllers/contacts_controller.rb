@@ -1,10 +1,11 @@
 class ContactsController < ApplicationController
+  allow_unauthenticated_access only: %i[ new create ]
   def new
     @message = Message.new
   end
 
   def create
-    message_params = params.expect(message: [:name, :email, :content])
+    message_params = params.expect(message: [ :name, :email, :content ])
     @message = Message.new(message_params)
 
     if @message.save
