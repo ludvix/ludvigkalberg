@@ -132,8 +132,94 @@ bin/rails db:create db:migrate
 
 # Start app
 bin/dev
-````
+```
 
+---
+
+## Hosting using Render, Neon and UptimeRobot (all free)
+
+### 1. Add build script
+
+Create ```bin/render-build.sh``` file.
+
+Inside put:
+```bash
+#!/usr/bin/env bash
+set -o errexit
+
+bundle install
+bundle exec rake assets:precompile
+bundle exec rake assets:clean
+bundle exec rake db:migrate
+```
+
+Make it executable and commit it:
+
+```bash
+chmod +x bin/render-build.sh
+git add .
+git commit -m "add render build script"
+git push
+```
+
+### 2. Create a web service on Render
+
+* Go to [https://render.com](https://render.com) and sign up.
+* Click **New -> Web Service** and connect to your github repo
+* Set:
+    * **Runtime:** Ruby
+    * **Build Command:** ./bin/render-build.sh
+    * **Start Command:** bundle exec puma -C config/puma.rb
+
+### 3. Set up neon
+* Go to [https://neon.com](https://neon.com)
+    * **Sign up**
+    * **Click new project**
+    * **Give name for example same as repo**
+    * **Choose region closest to you**
+    * **Click Create**
+    * **Done, Neon does all for you**
+
+### 4. Set environment variables
+
+In Render dashboard under **Environment** add:
+
+```
+DATABASE_URL = neon-connection-string (click connect on the project and it will show connection string)
+RAILS_ENV = production
+RAILS_MASTER_KEY = xxxxxxxxxxxxxx (check below if you cant find it)
+```
+
+### 5. Cant find rails master key?
+
+The master key is never commited to Git for security wise.
+
+You can check if you have the original key:
+```bash
+cat config/master.key
+```
+
+If key is lost we can regenerate it with:
+```bash
+rm config/credentials.yml.enc
+EDITOR="nano" rails credentials:edit # CTRL X right after, if prompted to save type Y then Enter
+cat config/master.key # output of this what you put in RAILS_MASTER_KEY
+```
+
+Then commit new credentials file, key will be outside of git always.
+```bash
+git add config/credentials.yml.enc
+git commit -m "regenerate credentials"
+git push
+```
+
+### 6. Uptime robot
+Render for free only gives 15 min before it sleeps, so we can use uptime robot to keep awake
+* Go to [uptimerobot.com](https://uptimerobot.com) and make a free account
+* Add a new **HTTP(S)** monitor pointing to your domain
+* Set interval to around **5-10 minutes**
+
+This will keep the website alive for free 24/7 each month.
 ---
 
 ## Website is at
